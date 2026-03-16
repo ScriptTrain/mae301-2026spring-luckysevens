@@ -16,3 +16,7 @@ For the technical concept, we would use drone telemetry data, including signal s
 A realistic MVP for this course would be a simulated prototype that uses simulated drone telemetry data to predict communication-loss risk and recommend the next course of action for the operator. In version one, a user could upload a simulated telemetry log and receive a risk score, a suggested action, and a short explanation of the result.
 
 The biggest three unknowns right now are whether we can get enough realistic telemetry data, how we would test whether the recommendations are helpful without a live drone setup, and whether drone operators would trust an AI tool like this. For our resources, the group will use synthetic telemetry data and simulated communication-loss cases, then later expand to public datasets from Kaggle, Hugging Face, or other open drone and robotics sources.
+
+## Video Pitch 
+
+Watch the the SignalSafe AI pitch: https://youtu.be/H_unND9jSoA?si=MEKJlEpDNz9mt0l7
