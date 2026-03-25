@@ -1,0 +1,116 @@
+from pymavlink import mavutil
+import time
+import math
+
+#Switch into guided mode for AI reactions, use atuo mode for mission navigation with five waypoints iwth five different interference obstacles
+
+# Connect to MAVProxy/SITL
+# Common SITL endpoint:
+connection = mavutil.mavlink_connection('udp:127.0.0.1:14550')
+
+# Wait until ArduPilot is able to communicate
+connection.wait_heartbeat()
+print(f"Connected to system {connection.target_system}, component {connection.target_component}")
+
+def set_mode(mode_name: str): # Mathcnes the mode id to the string becuase ArduPilot expects an id not a stirng but humans dont talk in ids
+    mode_id = connection.mode_mapping().get(mode_name) #looks at intern mapping of mode ids and their respective names
+    if mode_id is None:
+        raise ValueError(f"Unknown mode: {mode_name}") # could not actually find the mode id from the given name string
+
+    connection.mav.set_mode_send( # sets the new mode through the MAVlink connection by telling it the new mod eid to chang eto
+        connection.target_system,
+        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        mode_id
+    )
+
+#Following functions follow the dame format:
+# from the connection send a MAVlinnk message in the form of a command_long_send message
+# specifies which vehicle
+# specifies which part of vehicle to talk to (autopilot in this case)
+# specific command
+# confirmation (usually a 0 not sure why)
+# seven parameters (mostly zeros becuase only a few are typically used)
+
+def arm():
+    connection.mav.command_long_send(
+        connection.target_system,
+        connection.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        1,  # arm
+        0, 0, 0, 0, 0, 0
+    )
+
+def disarm():
+    connection.mav.command_long_send(
+        connection.target_system,
+        connection.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        0,  # disarm
+        0, 0, 0, 0, 0, 0
+    )
+
+def takeoff(altitude_m: float):
+    connection.mav.command_long_send(
+        connection.target_system,
+        connection.target_component,
+        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+        0,
+        0, 0, 0, 0,   # unused params for Copter
+        0, 0, altitude_m
+    )
+
+def rtl():
+    connection.mav.command_long_send(
+        connection.target_system,
+        connection.target_component,
+        mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH,
+        0,
+        0, 0, 0, 0, 0, 0, 0
+    )
+
+def send_body_velocity(vx, vy, vz): # saving this for reactions from AI not so much mission contoll 
+    """
+    Body-frame velocity command.
+    vx forward, vy right, vz down (m/s)
+    """
+    type_mask = (
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_X_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_Y_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_Z_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_AX_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_AY_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_AZ_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_YAW_IGNORE |
+        mavutil.mavlink.POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE
+    )
+
+    connection.mav.set_position_target_local_ned_send(
+        0,
+        connection.target_system,
+        connection.target_component,
+        mavutil.mavlink.MAV_FRAME_BODY_NED,
+        type_mask,
+        0, 0, 0,      # position ignored
+        vx, vy, vz,   # velocity used
+        0, 0, 0,      # accel ignored
+        0, 0          # yaw/yaw_rate ignored
+    )
+
+# Example sequence
+set_mode("GUIDED")
+time.sleep(2)
+
+arm()
+time.sleep(3)
+
+takeoff(10)
+time.sleep(10)
+
+# Move forward for 3 seconds
+for _ in range(3):
+    send_body_velocity(1.0, 0.0, 0.0)
+    time.sleep(1)
+
+rtl()
