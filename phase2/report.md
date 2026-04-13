@@ -1,3 +1,4 @@
 add portions prior to the nanoGPT refer to the project guidelines for expecations.
 
- nanoGPT
+## nanoGPT portion
+For the MVP, ai_control.py is intended to serve as the project’s AI mission-control backend for a drone communication-loss mitigation system. The program receives MAVLink telemetry data from a proxy, extracts communication and vehicle-status information, computes link-quality features such as latency, jitter, packet loss, missed heartbeats, and dropout duration, and then uses a rule-based decision process to estimate communication risk. From that risk level, it recommends safety actions such as continuing the mission, monitoring the link, slowing down, loitering and climbing to improve signal, or returning to launch. The script also includes an API endpoint that publishes the system’s current telemetry, computed features, and decision output, making it the main backend controller for the team’s AI safety system. The nanoGPT currently is having input issues but they will be adjusted for the final product." How does this sound
