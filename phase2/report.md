@@ -1,4 +1,4 @@
-# General Phase 2 Report:
+## General Phase 2 Report:
 
     The goal of the project is to create an AI-based piece of software that can advise drone pilots on how to avoid loss of signal when flying their drones. The AI should be able to monitor signal statistics to determine how risky the current flight path is and how to avoid the risky sections of it. The AI should be able to communicate this to the user and tell the drone what failsafe to use in case of a total loss-of-signal event.
     The main technical risks of this project include the difficulties is in getting the AI to communicate with the pilot and being able to interpret all of the high-level flight data at the same time. These are two very different skills, and while solutions exist, this makes this project difficult. The other issue is that in the software, multiple different systems have to communicate with eachother, making system design convoluted.
@@ -9,3 +9,6 @@
 
     The plan for phase 3 is the creation and training of the AI on the simulation that now exists. This will involve creating the AI and integrating it with the simulation in order to send and recieve data from it. As the AI is able to evaluate simple flight paths and obstacles the team will begin to generate harder to navigate courses for it, until it can pass the final test to confirm that it can deal with signal interference, all signal obstacles, and complex flight paths.
 
+## NanoGPT Portion:
+
+    For the MVP, ai_control.py is intended to serve as the project’s AI mission-control backend for a drone communication-loss mitigation system. The program receives MAVLink telemetry data from a proxy, extracts communication and vehicle-status information, computes link-quality features such as latency, jitter, packet loss, missed heartbeats, and dropout duration, and then uses a rule-based decision process to estimate communication risk. From that risk level, it recommends safety actions such as continuing the mission, monitoring the link, slowing down, loitering and climbing to improve signal, or returning to launch. The script also includes an API endpoint that publishes the system’s current telemetry, computed features, and decision output, making it the main backend controller for the team’s AI safety system. The nanoGPT currently is having input issues but they will be adjusted for the final product." How does this sound
