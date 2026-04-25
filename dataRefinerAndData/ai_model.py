@@ -12,7 +12,7 @@ DEFAULT_CSV_PATHS = [
     "run_004_pretty_bad_out.csv",
     "run_005_severe_out.csv",
 ]
-INPUT_WINDOW = 5
+INPUT_WINDOW = 3
 FORECAST_HORIZON = 20
 LABEL_INDICES = (19, 20)
 EXPECTED_COLUMN_COUNT = 21
@@ -106,6 +106,17 @@ def split_train_test_by_file(
                 train_y.append(output)
 
     return train_X, train_y, test_X, test_y
+
+
+def filter_features(
+    X: List[List[float]], y: List[List[float]], exclude_indices: List[int]
+) -> Tuple[List[List[float]], List[List[float]]]:
+    """Filter out specified feature indices from X and y."""
+    if not exclude_indices:
+        return X, y
+    exclude_set = set(exclude_indices)
+    X_filtered = [[val for j, val in enumerate(row) if j not in exclude_set] for row in X]
+    return X_filtered, y
 
 
 def transpose(matrix: List[List[float]]) -> List[List[float]]:
@@ -349,6 +360,12 @@ def main() -> None:
         action="store_true",
         help="Drop statistically irrelevant features and retrain the model.",
     )
+    parser.add_argument(
+        "--exclude-columns",
+        type=str,
+        default="",
+        help="Comma-separated list of feature indices to exclude (e.g., '0,5,10,15').",
+    )
     args = parser.parse_args()
 
     base_path = Path(__file__).resolve().parent
@@ -358,6 +375,18 @@ def main() -> None:
     if not train_X or not test_X:
         raise RuntimeError("Insufficient data to build training/testing datasets.")
 
+    # Apply column exclusion if specified
+    exclude_indices: List[int] = []
+    if args.exclude_columns.strip():
+        try:
+            exclude_indices = [int(idx.strip()) for idx in args.exclude_columns.split(",")]
+            print(f"Excluding feature indices: {exclude_indices}")
+            train_X, train_y = filter_features(train_X, train_y, exclude_indices)
+            test_X, test_y = filter_features(test_X, test_y, exclude_indices)
+            print(f"Filtered to {len(train_X[0])} features from original {len(train_X[0]) + len(exclude_indices)}")
+        except ValueError:
+            print("Warning: Invalid --exclude-columns format. Expected comma-separated integers.")
+
     weights, std_errors = fit_linear_regression(train_X, train_y)
     print("Trained linear regression model with feature dimension", len(train_X[0]) + 1)
 
@@ -366,11 +395,11 @@ def main() -> None:
     if args.drop_irrelevant and irrelevant_features:
         print(f"\nRetraining model after dropping {len(irrelevant_features)} irrelevant features...")
         # Filter out irrelevant features from train_X and test_X
-        def filter_features(X: List[List[float]], irrelevant: List[int]) -> List[List[float]]:
+        def filter_irrelevant_features(X: List[List[float]], irrelevant: List[int]) -> List[List[float]]:
             return [[val for j, val in enumerate(row) if j not in irrelevant] for row in X]
         
-        train_X_filtered = filter_features(train_X, irrelevant_features)
-        test_X_filtered = filter_features(test_X, irrelevant_features)
+        train_X_filtered = filter_irrelevant_features(train_X, irrelevant_features)
+        test_X_filtered = filter_irrelevant_features(test_X, irrelevant_features)
         
         weights, std_errors = fit_linear_regression(train_X_filtered, train_y)
         print("Retrained simplified linear regression model with feature dimension", len(train_X_filtered[0]) + 1)
